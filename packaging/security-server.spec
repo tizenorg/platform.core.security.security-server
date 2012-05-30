@@ -5,6 +5,7 @@ Release:    37
 Group:      TO_BE/FILLED_IN
 License:    Apache 2.0
 Source0:    %{name}-%{version}.tar.gz
+Source1001: packaging/security-server.manifest 
 BuildRequires:  cmake
 BuildRequires:  pkgconfig(dlog)
 BuildRequires:  pkgconfig(openssl)
@@ -36,6 +37,7 @@ Security server package (client-devel)
 %setup -q
 
 %build
+cp %{SOURCE1001} .
 cmake . -DCMAKE_INSTALL_PREFIX=%{_prefix}
 
 
@@ -62,6 +64,7 @@ rm -f /etc/rc.d/rc5.d/S25security-server
 
 
 %files
+%manifest security-server.manifest
 %defattr(-,root,root,-)
 /etc/rc.d/init.d/security-serverd
 /usr/bin/security-server
@@ -70,10 +73,12 @@ rm -f /etc/rc.d/rc5.d/S25security-server
 
 
 %files -n libsecurity-server-client
+%manifest security-server.manifest
 %defattr(-,root,root,-)
 /usr/lib/libsecurity-server-client.so.*
 
 %files -n libsecurity-server-client-devel
+%manifest security-server.manifest
 %defattr(-,root,root,-)
 /usr/lib/libsecurity-server-client.so
 /usr/include/security-server/security-server.h
