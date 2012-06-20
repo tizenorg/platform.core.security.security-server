@@ -1,0 +1,4 @@
+* Fri Jun 22 2012 Patrick McCarty <patrick.mccarty@linux.intel.com> 3cc9b66
+- Cleanups for the spec file
+- Add/install systemd service file
+
