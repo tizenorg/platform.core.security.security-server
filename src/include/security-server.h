@@ -23,7 +23,6 @@
 #define SECURITY_SERVER_H
 
 #include <sys/types.h>
-#include <privilege-control.h>
 
 /**
  * @file    security-server.h
@@ -148,6 +147,44 @@
 #define SECURITY_SERVER_API_ERROR_UNKNOWN -255
 /** @}*/
 
+
+/*! \brief   Libprivilege-control error codes */
+#define SECURITY_SERVER_API_ERROR_FILE_OPERATION    -30
+#define SECURITY_SERVER_API_ERROR_MEM_OPERATION     -31
+#define SECURITY_SERVER_API_ERROR_NOT_PERMITTED     -32
+#define SECURITY_SERVER_API_ERROR_INVALID_PARAM     -33
+#define SECURITY_SERVER_API_ERROR_INVALID_OPERATION -34
+#define SECURITY_SERVER_API_ERROR_DB_OPERATION      -35
+#define SECURITY_SERVER_API_ERROR_DB_LABEL_TAKEN    -36
+#define SECURITY_SERVER_API_ERROR_DB_QUERY_PREP     -37
+#define SECURITY_SERVER_API_ERROR_DB_QUERY_BIND     -38
+#define SECURITY_SERVER_API_ERROR_DB_QUERY_STEP     -39
+#define SECURITY_SERVER_API_ERROR_DB_CONNECTION     -40
+#define SECURITY_SERVER_API_ERROR_DB_NO_SUCH_APP    -41
+#define SECURITY_SERVER_API_ERROR_DB_PERM_FORBIDDEN -42
+#define SECURITY_SERVER_API_ERROR_SIMULTANEOUS_ACCESS -43
+/** @}*/
+
+/**
+ * @name Application types
+ * @{
+*/
+#define SECURITY_SERVER_APP_TYPE_WGT 0
+#define SECURITY_SERVER_APP_TYPE_OSP 1
+#define SECURITY_SERVER_APP_TYPE_EFL 2
+#define SECURITY_SERVER_APP_TYPE_OTHER 3
+/** @}*/
+
+/**
+ * @name Application path types
+ * @{
+*/
+#define SECURITY_SERVER_APP_PATH_PRIVATE 0
+#define SECURITY_SERVER_APP_PATH_GROUP_RW 1
+#define SECURITY_SERVER_APP_PATH_PUBLIC_RO 2
+#define SECURITY_SERVER_APP_PATH_SETTINGS_RW 3
+#define SECURITY_SERVER_APP_PATH_ANY_LABEL 4
+/** @}*/
 
 #ifdef __cplusplus
 extern "C" {
@@ -966,6 +1003,192 @@ int security_server_check_privilege_by_pid(int pid, const char *object, const ch
 int security_server_check_privilege_by_sockfd(int sockfd,
                                               const char *object,
                                               const char *access_rights);
+
+
+
+/**
+ * Starts exclusive database transaction. Run before functions modifying
+ * database (security_server_app_*).
+ * For now, only one process can enter exclusive transaction - trying to call
+ * security_server_perm_begin() when another transaction is already in progress will result
+ * in SECURITY_SERVER_API_ERROR_SIMULTANEOUS_ACCESS.
+ *
+ * \return SECURITY_SERVER_API_SUCCESS on success, SECURITY_SERVER_API_ERROR_* on error
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::libprivilege-control w"
+ */
+int security_server_perm_begin(void);
+
+/**
+ * Ends exclusive database transaction. Run after functions modifying database.
+ * If an error occurred during the transaction then all modifications will be
+ * rolled back.
+ *
+ * \return SECURITY_SERVER_API_SUCCESS on success, SECURITY_SERVER_API_ERROR_* on error
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::libprivilege-control w"
+ */
+int security_server_perm_end(void);
+
+/**
+* Discard all privilege modification since security_server_perm_begin().
+*
+* \return SECURITY_SERVER_API_SUCCESS on success, SECURITY_SERVER_API_ERROR_* on error
+*
+* Access to this function requires SMACK rule: "<app_label> security-server::libprivilege-control w"
+*/
+int security_server_perm_rollback(void);
+
+/**
+ * Adds an application to the database if it doesn't already exist. It is needed
+ * for tracking lifetime of an application. It must be called by a privileged
+ * user, before using any other security_server_perm_app_* function regarding that application.
+ *  It may be called more than once during installation.
+ *
+ * \param[in]   pkg_id  application identifier
+ * \return              SECURITY_SERVER_API_SUCCESS on success,
+ *                      SECURITY_SERVER_API_ERROR_* on error
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::libprivilege-control w"
+ */
+int security_server_app_install(const char* pkg_id);
+
+/**
+ * Adds an application to the database if it doesn't already exist. It is needed
+ * for tracking lifetime of an application. It must be called by privileged
+ * user, before using any other security_server_perm_app_* function regarding that application.
+ * It must be called within database transaction started with security_server_perm_begin() and
+ * finished with security_server_perm_end(). It may be called more than once during installation.
+ *
+ * \param[in]  pkg_id  application identifier
+ * \return             SECURITY_SERVER_API_SUCCESS on success, SECURITY_SERVER_API_ERROR_* on error
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::libprivilege-control w"
+ */
+int security_server_app_uninstall(const char* pkg_id);
+
+/**
+ * Grant SMACK permissions based on permissions list.
+ * It is intended to be called during app installation.
+ * It will construct SMACK rules based on permissions list, grant them
+ * and store it in a database, so they will be automatically granted on
+ * system boot, when persistent mode is enabled.
+ * It must be called by a privileged user.
+ *
+ * \param[in]  pkg_id      application identifier
+ * \param[in]  app_type    application type
+ * \param[in]  perm_list   array of permission names, last element must be NULL
+ * \param[in]  persistent  boolean for choosing between persistent and temporary rules
+ * \return                 SECURITY_SERVER_API_SUCCESS on success,
+ *                         SECURITY_SERVER_API_ERROR_* on error
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::libprivilege-control w"
+ */
+int security_server_app_enable_permissions(const char *pkg_id,
+                                           int app_type,
+                                           const char **perm_list,
+                                           int persistent);
+
+/**
+ * Removes previously granted SMACK permissions based on permissions list.
+ * It will remove given permissions from an application, leaving other granted
+ * permissions untouched. Results will be persistent.
+ * It must be called by a privileged user.
+ *
+ * \param[in]   pkg_id      application identifier
+ * \param[in]   app_type    application type
+ * \param[in]   perm_list   array of permission names, last element must be NULL
+ * \return                  SECURITY_SERVER_API_SUCCESS on success,
+ *                          SECURITY_SERVER_API_ERROR_* on error
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::libprivilege-control w"
+ */
+int security_server_app_disable_permissions(const char *pkg_id,
+                                            int app_type,
+                                            const char **perm_list);
+
+/**
+ * Removes all application's permissions, rules and directories registered in
+ * the database. It must be called by a privileged user.
+ *
+ * \param[in]  pkg_id   application identifier
+ * \return              SECURITY_SERVER_API_SUCCESS on success,
+ *                      SECURITY_SERVER_API_ERROR_* on error
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::libprivilege-control w"
+ */
+int security_server_app_revoke_permissions(const char* pkg_id);
+
+/**
+ * Removes all application's permissions which are not persistent. It must be
+ * called by a privileged user.
+ *
+ * \param[in]  pkg_id  application identifier
+ * \return         SECURITY_SERVER_API_SUCCESS on success, SECURITY_SERVER_API_ERROR_* on error
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::libprivilege-control w"
+ */
+int security_server_app_reset_permissions(const char* pkg_id);
+
+/**
+ * Sets SMACK labels for an application directory (recursively) or for an executable/symlink
+ * file. The exact behavior depends on app_path_type argument:
+ *  - SECURITY_SERVER_APP_PATH_PRIVATE:
+ *    label with app's label, set access label on everything
+ *    and execute label on executable files and symlinks to executable files
+ *
+ *  - SECURITY_SERVER_APP_PATH_GROUP_RW:
+ *    label with given shared_label, set access label on
+ *    everything and enable transmute on directories. Also give pkg_id full access
+ *    to the shared label.
+ *
+ *  - SECURITY_SERVER_APP_PATH_PUBLIC_RO:
+ *    label with autogenerated label, set access label on
+ *    everything and enable transmute on directories. Give full access to the label to
+ *    pkg_id and RX access to all other apps.
+ *
+ *  - SECURITY_SERVER_APP_PATH_SETTINGS_RW:
+ *    label with autogenerated label, set access label on
+ *    everything and enable transmute on directories. Give full access to the label to
+ *    pkg_id and RWX access to all appsetting apps.
+ *
+ * This function should be called during app installation.
+ * Results will be persistent on the file system.
+ * It must be called by privileged user.
+ *
+ * \param[in]  pkg_id         application identifier
+ * \param[in]  path           file or directory path
+ * \param[in]  app_path_type  application path type
+ * \param[in]  shared_label   optional argument for SECURITY_SERVER_APP_PATH_GROUP_RW and
+ *                        SECURITY_SERVER_APP_PATH_ANY_LABEL path type; type is const char*
+ * \return                SECURITY_SERVER_API_SUCCESS on success,
+ *                        SECURITY_SERVER_API_ERROR_* on error
+ *
+ * Access to this function requires SMACK rule: "<app_label> security-server::libprivilege-control w"
+ */
+int security_server_app_setup_path(const char* pkg_id,
+                                   const char* path,
+                                   int app_path_type, ...);
+
+/**
+ * Adds a new feature to the database. It must be called by a privileged user.
+ *
+ * \param[in]  app_type          application type
+ * \param[in]  api_feature_name  name of newly added feature
+ * \param[in]  smack_rule_set    set of rules required by the feature - NULL terminated
+ *                           list of NULL terminated rules.
+ * \param[in]  list_of_db_gids   list of gids required to access databases controlled
+ *                           by the feature
+ * \return                   SECURITY_SERVER_API_SUCCESS on success,
+ *                           SECURITY_SERVER_API_ERROR_* on error
+ *
+ *Access to this function requires SMACK rule: "<app_label> security-server::libprivilege-control w"
+ */
+int security_server_add_api_feature(int app_type,
+                                    const char* api_feature_name,
+                                    const char** set_smack_rule_set,
+                                    const gid_t* list_of_db_gids,
+                                    size_t list_size);
 
 #ifdef __cplusplus
 }
