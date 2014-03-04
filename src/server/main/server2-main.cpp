@@ -36,6 +36,7 @@
 #include <privilege-by-pid.h>
 #include <cookie.h>
 #include <password.h>
+#include <privilege.h>
 
 IMPLEMENT_SAFE_SINGLETON(SecurityServer::Log::LogSystem);
 
@@ -97,6 +98,7 @@ int main(void) {
         REGISTER_SOCKET_SERVICE(manager, SecurityServer::GetGidService);
         REGISTER_SOCKET_SERVICE(manager, SecurityServer::PrivilegeByPidService);
         REGISTER_SOCKET_SERVICE(manager, SecurityServer::PasswordService);
+        REGISTER_SOCKET_SERVICE(manager, SecurityServer::PrivilegeControlSevice);
 
         manager.MainLoop();
     }

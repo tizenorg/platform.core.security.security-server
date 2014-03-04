@@ -33,8 +33,6 @@ char const * const SERVICE_SOCKET_GET_GID =
     "/tmp/.security-server-api-get-gid.sock";
 char const * const SERVICE_SOCKET_PRIVILEGE_BY_PID =
     "/tmp/.security-server-api-privilege-by-pid.sock";
-char const * const SERVICE_SOCKET_APP_PRIVILEGE_BY_NAME =
-    "/tmp/.security-server-api-app-privilege-by-name.sock";
 char const * const SERVICE_SOCKET_COOKIE_GET =
     "/tmp/.security-server-api-cookie-get.sock";
 char const * const SERVICE_SOCKET_COOKIE_CHECK =
@@ -45,6 +43,8 @@ char const * const SERVICE_SOCKET_PASSWD_SET =
     "/tmp/.security-server-api-password-set.sock";
 char const * const SERVICE_SOCKET_PASSWD_RESET =
     "/tmp/.security-server-api-password-reset.sock";
+char const * const SERVICE_SOCKET_LIBPRIVILEGE_CONTROL =
+    "/tmp/.security-server-api-libprivilege-control.sock";
 
 const size_t COOKIE_SIZE = 20;
 
