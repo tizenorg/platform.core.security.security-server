@@ -33,14 +33,29 @@ namespace SecurityServer {
 extern char const * const SERVICE_SOCKET_SHARED_MEMORY;
 extern char const * const SERVICE_SOCKET_GET_GID;
 extern char const * const SERVICE_SOCKET_PRIVILEGE_BY_PID;
-extern char const * const SERVICE_SOCKET_APP_PRIVILEGE_BY_NAME;
 extern char const * const SERVICE_SOCKET_COOKIE_GET;
 extern char const * const SERVICE_SOCKET_COOKIE_CHECK;
 extern char const * const SERVICE_SOCKET_PASSWD_CHECK;
 extern char const * const SERVICE_SOCKET_PASSWD_SET;
 extern char const * const SERVICE_SOCKET_PASSWD_RESET;
+extern char const * const SERVICE_SOCKET_LIBPRIVILEGE_CONTROL;
 
-enum class AppPermissionsAction { ENABLE, DISABLE };
+enum class LibprivilegeControlAction : int
+{
+    APP_INSTALL,
+    APP_UNINSTALL,
+    APP_ENABLE_PERMISSIONS,
+    APP_DISABLE_PERMISSIONS,
+    APP_REVOKE_PERMISSION,
+    APP_RESET_PERMISSIONS,
+    APP_SETUP_PATH,
+    APP_ADD_FRIEND,
+    ADD_API_FEATURE,
+    BEGIN,
+    END,
+    ROLLBACK,
+    APP_ID_FROM_SOCKET,
+};
 
 enum class CookieCall
 {
@@ -77,4 +92,3 @@ extern const int SECURITY_SERVER_MAX_OBJ_NAME;
 } // namespace SecuritySever
 
 #endif // _SECURITY_SERVER_PROTOCOLS_
-

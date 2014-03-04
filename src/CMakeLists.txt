@@ -26,6 +26,7 @@ SET(SECURITY_SERVER_SOURCES
     ${SERVER2_PATH}/service/password-manager.cpp
     ${SERVER2_PATH}/service/password-file-buffer.cpp
     ${SERVER2_PATH}/service/smack-common.cpp
+    ${SERVER2_PATH}/service/privilege.cpp
     )
 
 SET_SOURCE_FILES_PROPERTIES(
@@ -74,6 +75,7 @@ SET(SECURITY_CLIENT_SOURCES
     ${SERVER2_PATH}/client/client-privilege-by-pid.cpp
     ${SERVER2_PATH}/client/client-socket-privilege.cpp
     ${SERVER2_PATH}/client/client-password.cpp
+    ${SERVER2_PATH}/client/client-privilege-control.cpp
     )
 
 ADD_LIBRARY(${TARGET_SECURITY_CLIENT} SHARED ${SECURITY_CLIENT_SOURCES})
