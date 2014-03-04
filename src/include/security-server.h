@@ -1138,6 +1138,35 @@ int security_server_shared_file_reopen(const char *filename, int *fd);
  */
 int security_server_shared_file_delete(const char *filename);
 
+
+
+/**
+ * Libprivilege-control API functions. See privilege-control.h for detailed descriptions.
+ */
+int security_server_app_set_privilege(const char* name, const char* type, const char* path);
+char* security_server_app_id_from_socket(int sockfd);
+int security_server_app_install(const char* pkg_id);
+int security_server_app_uninstall(const char* pkg_id);
+int security_server_app_disable_permissions(const char *app_id, app_type_t app_type, const char **perm_list);
+int security_server_app_enable_permissions(const char *app_id, app_type_t app_type, const char **perm_list, int persistent);
+int security_server_app_setup_permissions(const char* pkg_id, app_type_t app_type, const char** perm_list);
+int security_server_app_revoke_permissions(const char* pkg_id);
+int security_server_app_reset_permissions(const char* pkg_id);
+int security_server_app_has_permission(const char *pkg_id, app_type_t app_type, const char *permission_name, bool *is_enabled);
+int security_server_get_permissions(char ***ppp_permissions, app_type_t app_type);
+int security_server_get_apps_with_permission(perm_app_status_t **pp_apps, size_t *pi_apps_number, app_type_t app_type, const char *s_permission_name);
+int security_server_app_get_permissions(const char *pkg_id, app_type_t app_type, char ***ppp_perm_list);
+int security_server_app_setup_path(const char* pkg_id, const char* path, app_path_type_t app_path_type, ...);
+int security_server_app_get_paths(const char* pkg_id, app_path_type_t app_path_type, char*** ppp_paths);
+int security_server_app_remove_path(const char* pkg_id, const char *path);
+int security_server_app_add_friend(const char* pkg_id1, const char* pkg_id2);
+int security_server_add_api_feature(app_type_t app_type, const char* api_feature_name, const char** set_smack_rule_set, const gid_t* list_of_db_gids, size_t list_size);
+int security_server_perm_begin(void);
+int security_server_perm_end(void);
+int security_server_perm_rollback(void);
+int security_server_add_additional_rules(const char** set_smack_rule_set);
+
+
 #ifdef __cplusplus
 }
 #endif

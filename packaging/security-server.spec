@@ -97,6 +97,8 @@ ln -s ../security-server-open-for.socket %{buildroot}/usr/lib/systemd/system/soc
 ln -s ../security-server-password-check.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-password-check.socket
 ln -s ../security-server-password-set.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-password-set.socket
 ln -s ../security-server-password-reset.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-password-reset.socket
+ln -s ../security-server-libprivilege-control-get.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-libprivilege-control-get.socket
+ln -s ../security-server-libprivilege-control-modify.socket %{buildroot}/usr/lib/systemd/system/sockets.target.wants/security-server-libprivilege-control-modify.socket
 
 %clean
 rm -rf %{buildroot}
@@ -160,6 +162,10 @@ fi
 %attr(-,root,root) /usr/lib/systemd/system/security-server-password-set.socket
 %attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-password-reset.socket
 %attr(-,root,root) /usr/lib/systemd/system/security-server-password-reset.socket
+%attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-libprivilege-control-get.socket
+%attr(-,root,root) /usr/lib/systemd/system/security-server-libprivilege-control-get.socket
+%attr(-,root,root) /usr/lib/systemd/system/sockets.target.wants/security-server-libprivilege-control-modify.socket
+%attr(-,root,root) /usr/lib/systemd/system/security-server-libprivilege-control-modify.socket
 
 %{_datadir}/license/%{name}
 

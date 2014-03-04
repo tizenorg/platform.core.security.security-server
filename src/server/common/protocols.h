@@ -41,8 +41,40 @@ extern char const * const SERVICE_SOCKET_OPEN_FOR;
 extern char const * const SERVICE_SOCKET_PASSWD_CHECK;
 extern char const * const SERVICE_SOCKET_PASSWD_SET;
 extern char const * const SERVICE_SOCKET_PASSWD_RESET;
+extern char const * const SERVICE_SOCKET_LIBPRIVILEGE_CONTROL_GET;
+extern char const * const SERVICE_SOCKET_LIBPRIVILEGE_CONTROL_MODIFY;
 
 enum class AppPermissionsAction { ENABLE, DISABLE };
+
+enum class LibprivilegeControlGetAction : int
+{
+    APP_ID_FROM_SOCKET,
+    APP_HAS_PERMISSION,
+    APP_GET_PERMISSIONS,
+    GET_PERMISSIONS,
+    GET_APPS_WITH_PERMISSION,
+    APP_GET_PATHS,
+};
+
+enum class LibprivilegeControlModifyAction : int
+{
+    APP_SET_PRIVILEGE,
+    APP_INSTALL,
+    APP_UNINSTALL,
+    APP_ENABLE_PERMISSIONS,
+    APP_DISABLE_PERMISSIONS,
+    APP_SETUP_PERMISSIONS,
+    APP_REVOKE_PERMISSION,
+    APP_RESET_PERMISSIONS,
+    APP_REMOVE_PATH,
+    APP_SETUP_PATH,
+    APP_ADD_FRIEND,
+    ADD_API_FEATURE,
+    ADD_ADDITIONAL_RULES,
+    BEGIN,
+    END,
+    ROLLBACK,
+};
 
 enum class CookieCall
 {

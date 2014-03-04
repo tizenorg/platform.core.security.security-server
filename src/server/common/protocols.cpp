@@ -50,6 +50,11 @@ char const * const SERVICE_SOCKET_PASSWD_SET =
 char const * const SERVICE_SOCKET_PASSWD_RESET =
     "/tmp/.security-server-api-password-reset.sock";
 
+char const * const SERVICE_SOCKET_LIBPRIVILEGE_CONTROL_GET =
+    "/tmp/.security-server-api-libprivilege-control-get.sock";
+char const * const SERVICE_SOCKET_LIBPRIVILEGE_CONTROL_MODIFY =
+    "/tmp/.security-server-api-libprivilege-control-modify.sock";
+
 const size_t COOKIE_SIZE = 20;
 
 const size_t MAX_PASSWORD_LEN = 32;

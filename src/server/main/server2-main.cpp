@@ -38,6 +38,7 @@
 #include <cookie.h>
 #include <open-for.h>
 #include <password.h>
+#include <privilege.h>
 
 IMPLEMENT_SAFE_SINGLETON(SecurityServer::Log::LogSystem);
 
@@ -101,6 +102,7 @@ int main(void) {
         REGISTER_SOCKET_SERVICE(manager, SecurityServer::PrivilegeByPidService);
         REGISTER_SOCKET_SERVICE(manager, SecurityServer::AppPermissionsService);
         REGISTER_SOCKET_SERVICE(manager, SecurityServer::PasswordService);
+        REGISTER_SOCKET_SERVICE(manager, SecurityServer::PrivilegeControlSevice);
 
         manager.MainLoop();
     }
