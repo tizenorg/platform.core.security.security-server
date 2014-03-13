@@ -182,6 +182,11 @@ bool CookieService::cookieRequest(MessageBuffer &send, int socket)
     if (0 != getsockopt(socket, SOL_SOCKET, SO_PEERCRED, &cr, &len))
         return false;
 
+    Cookie cookie;
+    Serialization::Serialize(send, (int)SECURITY_SERVER_API_SUCCESS);
+    Serialization::Serialize(send, cookie.cookieId);
+
+#if 0
     const Cookie *generatedCookie = m_cookieJar.GenerateCookie(cr.pid);
 
     if (generatedCookie == NULL) {
@@ -206,7 +211,7 @@ bool CookieService::cookieRequest(MessageBuffer &send, int socket)
             Serialization::Serialize(send, generatedCookie->cookieId);
         }
     }
-
+#endif
     return true;
 }
 
