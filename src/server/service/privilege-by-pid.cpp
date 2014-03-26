@@ -34,7 +34,6 @@
 #include <security-server-util.h>
 #include <smack-check.h>
 
-#include <privilege-control.h>
 #include <smack-common.h>
 
 namespace SecurityServer {

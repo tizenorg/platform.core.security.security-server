@@ -31,7 +31,6 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <smack-check.h>
-#include <privilege-control.h>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/types.h>
