@@ -38,6 +38,7 @@
 
 SECURITY_SERVER_API
 int security_server_check_privilege_by_pid(
+#if 0
         int pid,
         const char *object,
         const char *access_rights) {
@@ -78,5 +79,8 @@ int security_server_check_privilege_by_pid(
         Deserialization::Deserialize(recv, result);
         return result;
     });
+#endif
+	return SECURITY_SERVER_API_SUCCESS; 
 }
+
 
