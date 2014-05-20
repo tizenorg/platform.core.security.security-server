@@ -7,6 +7,34 @@
 
 namespace SecurityServer {
 
+int smack_label_is_valid(const char *smack_label)
+{
+	int i;
+
+	if(!smack_label || smack_label[0] == '\0' || smack_label[0] == '-')
+		goto err;
+
+	for(i = 0; smack_label[i]; ++i) {
+		if(i >= SMACK_LABEL_LEN)
+			goto err;
+		switch(smack_label[i]) {
+		case '~':
+		case ' ':
+		case '/':
+		case '"':
+		case '\\':
+		case '\'':
+			goto err;
+		default:
+			break;
+		}
+	}
+
+	return 1;
+err:
+	return 0;
+}
+
 int smack_runtime_check(void)
 {
     static int smack_present = -1;

@@ -23,6 +23,8 @@
 
 namespace SecurityServer {
 
+int smack_label_is_valid(const char *smack_label);
+
 /*
  * A very simple runtime check for SMACK on the platform
  * Returns 1 if SMACK is present, 0 otherwise
