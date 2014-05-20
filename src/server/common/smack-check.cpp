@@ -7,6 +7,7 @@
 
 namespace SecurityServer {
 
+
 int smack_runtime_check(void)
 {
     static int smack_present = -1;

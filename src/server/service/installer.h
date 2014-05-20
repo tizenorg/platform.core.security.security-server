@@ -86,6 +86,9 @@ private:
      * @return        true on success
      */
     bool processAppUninstall(MessageBuffer &buffer, MessageBuffer &send);
+
+    bool setupPath(std::string pkgId, std::pair<std::string, int>appPath);
+
 };
 
 } // namespace SecurityServer
