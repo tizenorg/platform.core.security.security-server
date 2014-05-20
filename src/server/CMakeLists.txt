@@ -21,6 +21,7 @@ SET(COMMON_SOURCES
     ${COMMON_PATH}/dpl/core/src/noncopyable.cpp
     ${COMMON_PATH}/dpl/core/src/serialization.cpp
     ${COMMON_PATH}/dpl/core/src/singleton.cpp
+    ${PROJECT_SOURCE_DIR}/src/server/service/security-manager-common.cpp
     )
 
 INCLUDE_DIRECTORIES(SYSTEM
