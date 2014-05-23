@@ -25,10 +25,19 @@
 #include <dpl/serialization.h>
 
 #include <privilege-control.h>
+
+#include <sys/stat.h>
+#include <sys/smack.h>
+#include <sys/xattr.h>
+#include <linux/xattr.h>
+#include <memory>
+#include <fts.h>
+
 #include "installer.h"
 #include "protocols.h"
 #include "security-server.h"
 #include "security-manager.h"
+#include "security-manager-common.h"
 
 namespace SecurityServer {
 
@@ -36,31 +45,220 @@ namespace {
 
 const InterfaceID INSTALLER_IFACE = 0;
 
+/* Const defined below is used to label links to executables */
+const char *XATTR_NAME_TIZENEXEC =  XATTR_SECURITY_PREFIX "TIZEN_EXEC_LABEL";
+
 /**
- * Convert Security Mangager's API path type to libprivilege-control's API path type.
- * @return true on success
+ * Return values
+ * -1 - error
+ * 0 - skip
+ * 1 - label
  */
-bool TranslateAppPathType(const app_install_path_type path_type,
-                          app_path_type_t& lpc_path_type)
+enum class FileDecision {
+    SKIP = 0,
+    LABEL = 1,
+    ERROR = -1
+};
+
+typedef std::function<FileDecision(const FTSENT*)> labelDecisionFn;
+
+
+static FileDecision labelAll(const FTSENT *ftsent __attribute__((unused)))
 {
-    switch (path_type) {
-        case SECURITY_MANAGER_PATH_PRIVATE:
-            lpc_path_type = APP_PATH_PRIVATE;
-            break;
-        case SECURITY_MANAGER_PATH_PUBLIC:
-            lpc_path_type = APP_PATH_PUBLIC;
-            break;
-        case SECURITY_MANAGER_PATH_PUBLIC_RO:
-            lpc_path_type = APP_PATH_FLOOR;
-            break;
-        default:
+    LogSecureDebug("Entering function: " << __func__);
+
+    return FileDecision::LABEL;
+}
+
+static FileDecision labelDirs(const FTSENT *ftsent)
+{
+    LogSecureDebug("Entering function: " << __func__);
+
+    // label only directories
+    if (S_ISDIR(ftsent->fts_statp->st_mode))
+        return FileDecision::LABEL;
+    return FileDecision::SKIP;
+}
+
+static FileDecision labelExecs(const FTSENT *ftsent)
+{
+    LogSecureDebug("Entering function: " << __func__);
+
+    LogDebug("Mode = " << ftsent->fts_statp->st_mode);
+    // label only regular executable files
+    if (S_ISREG(ftsent->fts_statp->st_mode) && (ftsent->fts_statp->st_mode & S_IXUSR))
+        return FileDecision::LABEL;
+    return FileDecision::SKIP;
+}
+
+
+static FileDecision labelLinksToExecs(const FTSENT *ftsent)
+{
+    LogSecureDebug("Entering function: " << __func__);
+
+    struct stat buf;
+    char *target;
+
+    // check if it's a link
+    if ( !S_ISLNK(ftsent->fts_statp->st_mode))
+        return FileDecision::SKIP;
+
+    target = realpath(ftsent->fts_path, NULL);
+    if (!target) {
+        LogSecureError("Getting link target for " << ftsent->fts_path << " failed (Error = " << strerror(errno) << ")");
+        return FileDecision::ERROR;
+    }
+    if (-1 == stat(target, &buf)) {
+        LogSecureError("stat failed for " << target << " (Error = " << strerror(errno) << ")");
+        return FileDecision::ERROR;
+    }
+    // skip if link target is not a regular executable file
+    if (buf.st_mode != (buf.st_mode | S_IXUSR | S_IFREG)) {
+        LogSecureDebug(target << "is not a regular executable file. Skipping.");
+        return FileDecision::SKIP;
+    }
+
+    return FileDecision::LABEL;
+}
+
+static bool dirSetSmack(const std::string &path, const std::string &label,
+        const char *xattr_name, labelDecisionFn fn)
+{
+    LogSecureDebug("Entering function: "<< __func__ <<". Params:"
+            " path=" << path << ", label=" << label << ", xattr=" << xattr_name);
+
+    std::vector<char> buffer(path.begin(), path.end());
+    buffer.push_back('\0');
+
+    char *const path_argv[] = {&buffer[0], NULL};
+    FTSENT *ftsent;
+    FileDecision ret;
+
+    std::unique_ptr<FTS, std::function<void(FTS*)> > fts(
+            fts_open(path_argv, FTS_PHYSICAL | FTS_NOCHDIR, NULL),
+            fts_close);
+
+    if (fts.get() == NULL) {
+        LogError("fts_open failed.");
+        return false;
+    }
+
+    while ((ftsent = fts_read(fts.get())) != NULL) {
+        /* Check for error (FTS_ERR) or failed stat(2) (FTS_NS) */
+        if (ftsent->fts_info == FTS_ERR || ftsent->fts_info == FTS_NS) {
+            LogError("FTS_ERR error or failed stat(2) (FTS_NS)");
             return false;
-    };
+        }
+
+        ret = fn(ftsent);
+        if (ret == FileDecision::ERROR) {
+            LogError("fn(ftsent) failed.");
+            return false;
+        }
+
+        if (ret == FileDecision::LABEL) {
+            if (lsetxattr(ftsent->fts_path, xattr_name, label.c_str(), label.length(), 0) != 0) {
+                LogError("smack_lsetlabel failed.");
+                return false;
+            }
+        }
+
+    }
+
+    /* If last call to fts_read() set errno, we need to return error. */
+    if ((errno != 0) && (ftsent == NULL)) {
+        LogError("Last errno from fts_read: " << strerror(errno));
+        return false;
+    }
     return true;
+}
+
+
+static bool labelDir(const std::string &path, const std::string &label,
+        bool set_transmutable, bool set_executables)
+{
+    LogSecureDebug("Entering function: "<< __func__ <<". Params:"
+            " path=" << path << " label= " << label
+            << " set_transmutable= " << set_transmutable
+            << " set_executables= " << set_executables);
+    bool ret = true;
+
+    // setting access label on everything in given directory and below
+    ret = dirSetSmack(path, label, XATTR_NAME_SMACK, labelAll);
+    if (!ret) {
+        LogError("dir_set_smack failed (access label)");
+        return ret;
+    }
+
+    if (set_transmutable) {
+        // setting transmute on dirs
+        ret = dirSetSmack(path, "TRUE", XATTR_NAME_SMACKTRANSMUTE, labelDirs);
+        if (!ret) {
+            LogError("dir_set_smack failed (transmute)");
+            return ret;
+        }
+    }
+
+    if (set_executables) {
+        ret = dirSetSmack(path, label, XATTR_NAME_SMACKEXEC, &labelExecs);
+        if (!ret)
+        {
+            LogError("dir_set_smack failed (execs).");
+            return ret;
+        }
+
+        //setting execute label for everything with permission to execute
+        ret = dirSetSmack(path, label, XATTR_NAME_TIZENEXEC, &labelLinksToExecs);
+        if (!ret)
+        {
+            LogError("dir_set_smack failed (link to execs).");
+            return ret;
+        }
+    }
+
+    return ret;
+}
+
+
+bool setupPath(const std::string &pkgId, const std::pair<std::string, int> &appPath)
+{
+    using namespace SecurityManager;
+
+    app_install_path_type pathType = static_cast<app_install_path_type>(appPath.second);
+    std::string label;
+    bool label_executables, label_transmute;
+
+
+    switch (pathType) {
+    case SECURITY_MANAGER_PATH_PRIVATE:
+        if(!generateAppLabel(pkgId,label))
+            return false;
+        label_executables = true;
+        label_transmute = false;
+        break;
+    case SECURITY_MANAGER_PATH_PUBLIC:
+        label.assign(InstallerService::LABEL_FOR_PUBLIC_APP_PATH);
+        label_executables = false;
+        label_transmute = true;
+        break;
+    case SECURITY_MANAGER_PATH_PUBLIC_RO:
+        label.assign("_");
+        label_executables = false;
+        label_transmute = false;
+        break;
+    default:
+        LogError("Path type not known.");
+        return false;
+    }
+    if (!labelDir(appPath.first, label, label_transmute, label_executables))
+        return false;
+    else return true;
 }
 
 } // namespace anonymous
 
+/* Const defined below is used to label links to executables */
+const char *InstallerService::LABEL_FOR_PUBLIC_APP_PATH = "User";
 
 InstallerService::InstallerService()
 {
@@ -220,19 +418,9 @@ bool InstallerService::processAppInstall(MessageBuffer &buffer, MessageBuffer &s
 
     // register paths
     for (const auto& appPath : req.appPaths) {
-        app_path_type_t path_type;
-        if (!TranslateAppPathType((app_install_path_type)appPath.second,
-                                  path_type)) {
-            LogError("Unrecognized path type: " << appPath.second);
-            goto error_label;
-        }
-        LogDebug("Adding path: " << appPath.first << " (type " << path_type << ")");
-
-        // TODO: use pkgId.
-        result = perm_app_setup_path(req.appId.c_str(), appPath.first.c_str(), path_type);
-        if (PC_OPERATION_SUCCESS != result) {
-            // libprivilege error
-            LogDebug("perm_app_setup_path() returned " << result);
+        result = setupPath(req.pkgId, appPath);
+        if (!result) {
+            LogDebug("setupPath() failed ");
             goto error_label;
         }
     }
