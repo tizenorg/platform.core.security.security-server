@@ -21,6 +21,15 @@
  * @brief       Implementation of installer service for libprivilege-control encapsulation.
  */
 
+#include <vector>
+#include <fstream>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/smack.h>
+#include <linux/limits.h>
+
 #include <dpl/log/log.h>
 #include <dpl/serialization.h>
 
@@ -29,12 +38,16 @@
 #include "protocols.h"
 #include "security-server.h"
 #include "security-manager.h"
+#include "security-manager-common.h"
 
 namespace SecurityServer {
 
 namespace {
 
 const InterfaceID INSTALLER_IFACE = 0;
+const char *const APP_RULES_TEMPLATE_FILE_PATH = "/etc/smack/app-rules-template.smack";
+const char *const APP_RULES_PATH_FORMAT        = "/etc/smack/accesses.d/%s";
+const char *const SMACK_APP_LABEL_TEMPLATE     = "~APP~";
 
 /**
  * Convert Security Mangager's API path type to libprivilege-control's API path type.
@@ -57,6 +70,121 @@ bool TranslateAppPathType(const app_install_path_type path_type,
             return false;
     };
     return true;
+}
+
+bool tokenizeRule(const std::string &rule, std::string tokens[], int size)
+{
+    size_t startPos;
+    size_t endPos = 0;
+    const char delimiters[] = " \t\n\r";
+
+    for (int i = 0; i < size; i++) {
+        startPos = rule.find_first_not_of(delimiters, endPos);
+        if (startPos == std::string::npos) {
+            LogError("Unexpected end of rule: " << rule);
+            return false;
+        }
+
+        endPos = rule.find_first_of(delimiters, startPos);
+        tokens[i] = rule.substr(startPos, endPos - startPos);
+    }
+
+    if (endPos != std::string::npos &&
+        rule.find_first_not_of(delimiters, endPos) != std::string::npos) {
+        LogError("Too many tokens found in rule: " << rule);
+        return false;
+    }
+
+    return true;
+}
+
+bool generateRulesFromTemplate(smack_accesses *handle,
+        const std::vector<std::string> &templateRules, const std::string &pkgId)
+{
+    std::string tokens[3];
+    std::string &subject = tokens[0];
+    std::string &object = tokens[1];
+    std::string &permissions = tokens[2];
+
+    for (auto rule = templateRules.begin(); rule != templateRules.end(); ++rule) {
+        if (rule->length() == 0)
+            continue;
+
+        if (!tokenizeRule(*rule, tokens, sizeof(tokens) / sizeof(*tokens))) {
+            return false;
+        }
+
+        bool subjectIsTemplate = (subject == SMACK_APP_LABEL_TEMPLATE);
+        bool objectIsTemplate = (object == SMACK_APP_LABEL_TEMPLATE);
+
+        if (objectIsTemplate == subjectIsTemplate) {
+            LogError("Invalid rule template. Exactly one app label template expected: " << *rule);
+            return false;
+        }
+
+        if (subjectIsTemplate) {
+            if (!SecurityManager::generateAppLabel(pkgId, subject)) {
+                LogError("Failed to generate app label from pkgid: " << pkgId);
+                return false;
+            }
+        }
+
+        if (objectIsTemplate) {
+            if (!SecurityManager::generateAppLabel(pkgId, object)) {
+                LogError("Failed to generate app label from pkgid: " << pkgId);
+                return false;
+            }
+        }
+
+        if (smack_accesses_add(handle, subject.c_str(), object.c_str(), permissions.c_str())) {
+            LogError("smack_accesses_add failed on rule: " << subject << " " << object <<
+                    " " << permissions);
+            return false;
+        }
+    }
+
+    return true;
+}
+
+bool loadRulesFromFile(smack_accesses *handle, const char *path)
+{
+    int fd;
+    bool ret = true;
+
+    fd = open(path, O_RDONLY);
+    if (fd == -1) {
+        LogError("Failed to open file: %s" << path);
+        return false;
+    }
+
+    if (smack_accesses_add_from_file(handle, fd)) {
+        LogError("Failed to load smack rules from file: %s" << path);
+        ret = false;
+    }
+
+    close(fd);
+    return ret;
+}
+
+bool saveRulesToFile(smack_accesses *handle, const char *path)
+{
+    int fd;
+    bool ret = true;
+
+    fd = open(path, O_CREAT | O_WRONLY | O_TRUNC, 0644);
+    if (fd == -1) {
+        LogError("Failed to create file: %s" << path);
+        return false;
+    }
+
+    if (smack_accesses_save(handle, fd)) {
+        LogError("Failed to save rules to file: %s" << path);
+        unlink(path);
+        ret = false;
+    }
+
+    close(fd);
+    return ret;
 }
 
 } // namespace anonymous
@@ -237,10 +365,17 @@ bool InstallerService::processAppInstall(MessageBuffer &buffer, MessageBuffer &s
         }
     }
 
+    // TODO: This should be done only for the first application in the package
+    if (!installPackageSmackRules(req.pkgId)) {
+        LogError("Failed to apply package-specific smack rules");
+        goto error_label;
+    }
+
     // finish database transaction
     result = perm_end();
     LogDebug("perm_end() returned " << result);
     if (PC_OPERATION_SUCCESS != result) {
+        uninstallPackageSmackRules(req.pkgId);
         // error in libprivilege-control
         Serialization::Serialize(send, SECURITY_SERVER_API_ERROR_SERVER_ERROR);
         return false;
@@ -285,11 +420,29 @@ bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer 
         return false;
     }
 
+    // TODO: Uncomment once proper pkgId -> smack label mapping is implemented (currently all
+    //       applications are mapped to user label and removal of such rules would be harmful)
+    // TODO: This should be performed only for the last application in the package
+    // TODO: retrieve pkgId as it's not available in the request
+    //if (!uninstallPackageSmackRules(pkgId)) {
+    //    LogError("Error on uninstallation of package-specific smack rules");
+    //    result = perm_rollback();
+    //    LogDebug("perm_rollback() returned " << result);
+    //    Serialization::Serialize(send, SECURITY_SERVER_API_ERROR_SERVER_ERROR);
+    //    return false;
+    //}
+
     // finish database transaction
     result = perm_end();
     LogDebug("perm_end() returned " << result);
     if (PC_OPERATION_SUCCESS != result) {
         // error in libprivilege-control
+
+        // TODO: This should be uncommented when uninstallation code is enabled
+        // smack rules uninstallation rollback
+        // bool res = installPackageSmackRules(pkgId);
+        // LogDebug("installPackageSmackRules on uninstallation rollback returned " << res);
+
         Serialization::Serialize(send, SECURITY_SERVER_API_ERROR_SERVER_ERROR);
         return false;
     }
@@ -297,6 +450,98 @@ bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer 
     // success
     Serialization::Serialize(send, SECURITY_SERVER_API_SUCCESS);
     return true;
+}
+
+bool InstallerService::installPackageSmackRules(const std::string &pkgId) {
+    std::string line;
+    std::vector<std::string> rules_vector;
+    smack_accesses *handle = NULL;
+    bool ret = true;
+    std::ifstream ruleTemplateFile(APP_RULES_TEMPLATE_FILE_PATH);
+    char path[PATH_MAX];
+
+    if (!ruleTemplateFile.is_open()) {
+        LogError("Cannot open file: " << APP_RULES_TEMPLATE_FILE_PATH);
+        return false;
+    }
+
+    while (std::getline(ruleTemplateFile, line)) {
+        rules_vector.push_back(line);
+    }
+
+    if (ruleTemplateFile.bad()) {
+        LogError("Error reading template file: " << APP_RULES_TEMPLATE_FILE_PATH);
+        return false;
+    }
+
+    if (smack_accesses_new(&handle) < 0) {
+        LogError("Failed to create smack_accesses handle");
+        return false;
+    }
+
+    if (!generateRulesFromTemplate(handle, rules_vector, pkgId)) {
+        ret = false;
+        goto out;
+    }
+
+    if (smack_accesses_apply(handle) < 0) {
+        LogError("Failed to apply application rules to kernel");
+        ret = false;
+        goto out;
+    }
+
+    snprintf(path, sizeof(path), APP_RULES_PATH_FORMAT, pkgId.c_str());
+    if (!saveRulesToFile(handle, path)) {
+        smack_accesses_clear(handle);
+        ret = false;
+        goto out;
+    }
+
+out:
+    smack_accesses_free(handle);
+    return ret;
+}
+
+bool InstallerService::uninstallPackageSmackRules(const std::string &pkgId)
+{
+    char path[PATH_MAX];
+    bool ret = true;
+    smack_accesses *handle;
+
+    snprintf(path, sizeof(path), APP_RULES_PATH_FORMAT, pkgId.c_str());
+    if (access(path, F_OK) == -1) {
+        if (errno == ENOENT) {
+            LogWarning("Smack rules were not installed for pkgId: " << pkgId);
+            return true;
+        }
+
+        LogWarning("Cannot access smack rules path: " << path);
+        return false;
+    }
+
+    if (smack_accesses_new(&handle) < 0) {
+        LogError("Failed to create smack_accesses handle");
+        return false;
+    }
+
+    if (loadRulesFromFile(handle, path)) {
+        if (smack_accesses_clear(handle) < 0) {
+               LogWarning("Failed to clear smack kernel rules for pkgId: " << pkgId);
+               // don't stop uninstallation
+           }
+    }
+    else {
+        LogWarning("Failed to load rules from file: " << path);
+        // don't stop uninstallation
+    }
+
+    if (unlink(path) == -1) {
+        LogError("Failed to remove smack rules file: " << path);
+        ret = false;
+    }
+
+    smack_accesses_free(handle);
+    return ret;
 }
 
 } // namespace SecurityServer

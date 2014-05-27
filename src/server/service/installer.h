@@ -24,6 +24,7 @@
 #ifndef _SECURITY_SERVER_INSTALLER_
 #define _SECURITY_SERVER_INSTALLER_
 
+#include <string>
 #include <service-thread.h>
 #include <generic-socket-manager.h>
 #include <message-buffer.h>
@@ -86,6 +87,29 @@ private:
      * @return        true on success
      */
     bool processAppUninstall(MessageBuffer &buffer, MessageBuffer &send);
+
+    /**
+     * Install package-specific smack rules.
+     *
+     * Function creates smack rules using predefined template. Rules are applied
+     * to the kernel and saved on persistent storage so they are loaded on system boot.
+     *
+     * @param[in] pkgId - package identifier
+     * @return true on success, false on error
+     */
+    bool installPackageSmackRules(const std::string& pkgId);
+
+    /**
+     * Uninstall package-specific smack rules.
+     *
+     * Function loads package-specific smack rules, revokes them from the kernel
+     * and removes from persistent storage.
+     *
+     * @param[in] pkgId - package identifier
+     * @return true if smack rule file has been uninstalled or didn't exist
+     *         false otherwise
+     */
+    bool uninstallPackageSmackRules(const std::string& pkgId);
 };
 
 } // namespace SecurityServer
