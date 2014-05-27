@@ -21,6 +21,15 @@
  * @brief       Implementation of installer service for libprivilege-control encapsulation.
  */
 
+#include <vector>
+#include <fstream>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/smack.h>
+#include <linux/limits.h>
+
 #include <dpl/log/log.h>
 #include <dpl/serialization.h>
 
@@ -29,12 +38,16 @@
 #include "protocols.h"
 #include "security-server.h"
 #include "security-manager.h"
+#include "security-manager-common.h"
+#include "smack-rules.h"
 
 namespace SecurityServer {
 
 namespace {
 
 const InterfaceID INSTALLER_IFACE = 0;
+const char *const APP_RULES_TEMPLATE_FILE_PATH = "/etc/smack/app-rules-template.smack";
+const char *const APP_RULES_DIRECTORY          = "/etc/smack/accesses.d/";
 
 /**
  * Convert Security Mangager's API path type to libprivilege-control's API path type.
@@ -237,10 +250,17 @@ bool InstallerService::processAppInstall(MessageBuffer &buffer, MessageBuffer &s
         }
     }
 
+    // TODO: This should be done only for the first application in the package
+    if (!installPackageSmackRules(req.pkgId)) {
+        LogError("Failed to apply package-specific smack rules");
+        goto error_label;
+    }
+
     // finish database transaction
     result = perm_end();
     LogDebug("perm_end() returned " << result);
     if (PC_OPERATION_SUCCESS != result) {
+        uninstallPackageSmackRules(req.pkgId);
         // error in libprivilege-control
         Serialization::Serialize(send, SECURITY_SERVER_API_ERROR_SERVER_ERROR);
         return false;
@@ -285,11 +305,29 @@ bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer 
         return false;
     }
 
+    // TODO: Uncomment once proper pkgId -> smack label mapping is implemented (currently all
+    //       applications are mapped to user label and removal of such rules would be harmful)
+    // TODO: This should be performed only for the last application in the package
+    // TODO: retrieve pkgId as it's not available in the request
+    //if (!uninstallPackageSmackRules(pkgId)) {
+    //    LogError("Error on uninstallation of package-specific smack rules");
+    //    result = perm_rollback();
+    //    LogDebug("perm_rollback() returned " << result);
+    //    Serialization::Serialize(send, SECURITY_SERVER_API_ERROR_SERVER_ERROR);
+    //    return false;
+    //}
+
     // finish database transaction
     result = perm_end();
     LogDebug("perm_end() returned " << result);
     if (PC_OPERATION_SUCCESS != result) {
         // error in libprivilege-control
+
+        // TODO: This should be uncommented when uninstallation code is enabled
+        // smack rules uninstallation rollback
+        // bool res = installPackageSmackRules(pkgId);
+        // LogDebug("installPackageSmackRules on uninstallation rollback returned " << res);
+
         Serialization::Serialize(send, SECURITY_SERVER_API_ERROR_SERVER_ERROR);
         return false;
     }
@@ -297,6 +335,79 @@ bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer 
     // success
     Serialization::Serialize(send, SECURITY_SERVER_API_SUCCESS);
     return true;
+}
+
+bool InstallerService::installPackageSmackRules(const std::string &pkgId) {
+    try {
+        SecurityManager::SmackRules smackRules;
+        std::string path = getPackageRulesFilePath(pkgId);
+
+        if (!smackRules.addFromTemplateFile(APP_RULES_TEMPLATE_FILE_PATH, pkgId)) {
+            LogError("Failed to load smack rules for pkgId " << pkgId);
+            return false;
+        }
+
+        if (!smackRules.apply()) {
+            LogError("Failed to apply application rules to kernel");
+            return false;
+        }
+
+        if (!smackRules.saveToFile(path)) {
+            smackRules.clear();
+            return false;
+        }
+
+        return true;
+    } catch (const std::bad_alloc &e) {
+        LogError("Out of memory while trying to install smack rules for pkgId " << pkgId);
+        return false;
+    }
+}
+
+bool InstallerService::uninstallPackageSmackRules(const std::string &pkgId)
+{
+    std::string path = getPackageRulesFilePath(pkgId);
+
+    if (access(path.c_str(), F_OK) == -1) {
+        if (errno == ENOENT) {
+            LogWarning("Smack rules were not installed for pkgId: " << pkgId);
+            return true;
+        }
+
+        LogWarning("Cannot access smack rules path: " << path);
+        return false;
+    }
+
+    try {
+        SecurityManager::SmackRules rules;
+        if (rules.loadFromFile(path)) {
+            if (!rules.clear()) {
+                LogWarning("Failed to clear smack kernel rules for pkgId: " << pkgId);
+                // don't stop uninstallation
+            }
+        } else {
+            LogWarning("Failed to load rules from file: " << path);
+            // don't stop uninstallation
+        }
+
+        if (unlink(path.c_str()) == -1) {
+            LogError("Failed to remove smack rules file: " << path);
+            return false;
+        }
+
+        return true;
+    } catch (const std::bad_alloc &e) {
+        LogError("Out of memory while trying to uninstall smack rules for pkgId: " << pkgId);
+        return false;
+    }
+}
+
+std::string InstallerService::getPackageRulesFilePath(const std::string &pkgId)
+{
+    std::string path(APP_RULES_DIRECTORY);
+    path.append(pkgId);
+    path.append(".smack");
+    return path;
 }
 
 } // namespace SecurityServer
