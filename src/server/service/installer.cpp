@@ -29,6 +29,7 @@
 #include "protocols.h"
 #include "security-server.h"
 #include "security-manager.h"
+#include "security-manager-common.h"
 
 namespace SecurityServer {
 
@@ -246,6 +247,12 @@ bool InstallerService::processAppInstall(MessageBuffer &buffer, MessageBuffer &s
         return false;
     }
 
+    // TODO: This should be done only for the first application in the package
+    if (!SecurityManager::installPackageSmackRules(req.pkgId)) {
+        LogError("Failed to apply package-specific smack rules");
+        goto error_label;
+    }
+
     // success
     Serialization::Serialize(send, SECURITY_SERVER_API_SUCCESS);
     return true;
@@ -293,6 +300,16 @@ bool InstallerService::processAppUninstall(MessageBuffer &buffer, MessageBuffer 
         Serialization::Serialize(send, SECURITY_SERVER_API_ERROR_SERVER_ERROR);
         return false;
     }
+
+    // TODO: Uncomment once proper pkgId -> smack label mapping is implemented (currently all applications are mapped
+    //       to user label and removal of such rules would be harmful)
+    // TODO: This should be performed only for the last application in the package
+    // TODO: retrieve pkgId as it's not available in the request
+    //if (!SecurityManager::uninstallPackageSmackRules(pkgId)) {
+    //    LogError("Error on uninstallation of package-specific smack rules");
+    //    Serialization::Serialize(send, SECURITY_SERVER_API_ERROR_SERVER_ERROR);
+    //    return false;
+    //}
 
     // success
     Serialization::Serialize(send, SECURITY_SERVER_API_SUCCESS);
