@@ -22,8 +22,8 @@
  *              Current char traits could be extended in feature to boost
  * performance
  */
-#ifndef DPL_CHAR_TRAITS
-#define DPL_CHAR_TRAITS
+#ifndef SECURITY_SERVER_CHAR_TRAITS
+#define SECURITY_SERVER_CHAR_TRAITS
 
 #include <cstring>
 #include <string>
@@ -31,8 +31,8 @@
 #include <algorithm>
 #include <dpl/exception.h>
 
-namespace DPL {
+namespace SecurityServer {
 typedef std::char_traits<wchar_t> CharTraits;
-} // namespace DPL
+} // namespace SecurityServer
 
-#endif // DPL_CHAR_TRAITS
+#endif // SECURITY_SERVER_CHAR_TRAITS

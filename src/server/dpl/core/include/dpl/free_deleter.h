@@ -23,7 +23,7 @@
 #define FREE_DELETER_H
 
 #include <cstdlib>
-namespace DPL
+namespace SecurityServer
 {
 struct free_deleter
 {
