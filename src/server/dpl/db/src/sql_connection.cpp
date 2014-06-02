@@ -19,6 +19,8 @@
  * @version     1.0
  * @brief       This file is the implementation file of SQL connection
  */
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wdeprecated-declarations"
 #include <stddef.h>
 #include <dpl/db/sql_connection.h>
 #include <dpl/db/naive_synchronization_object.h>
@@ -864,3 +866,5 @@ SqlConnection::AllocDefaultSynchronizationObject()
 }
 } // namespace DB
 } // namespace DPL
+
+#pragma GCC diagnostic pop
