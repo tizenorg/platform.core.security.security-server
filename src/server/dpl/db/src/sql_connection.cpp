@@ -33,7 +33,7 @@
 #include <cstdio>
 #include <cstdarg>
 
-namespace DPL {
+namespace SecurityServer {
 namespace DB {
 namespace // anonymous
 {
@@ -865,6 +865,6 @@ SqlConnection::AllocDefaultSynchronizationObject()
     return new NaiveSynchronizationObject();
 }
 } // namespace DB
-} // namespace DPL
+} // namespace SecurityServer
 
 #pragma GCC diagnostic pop

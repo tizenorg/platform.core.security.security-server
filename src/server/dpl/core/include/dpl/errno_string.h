@@ -19,17 +19,17 @@
  * @version     1.0
  * @brief       This file is the implementation file of errno string
  */
-#ifndef DPL_ERRNO_STRING_H
-#define DPL_ERRNO_STRING_H
+#ifndef SECURITY_SERVER_ERRNO_STRING_H
+#define SECURITY_SERVER_ERRNO_STRING_H
 
 #include <dpl/exception.h>
 #include <string>
 #include <cerrno>
 
-namespace DPL {
-DECLARE_EXCEPTION_TYPE(DPL::Exception, InvalidErrnoValue)
+namespace SecurityServer {
+DECLARE_EXCEPTION_TYPE(SecurityServer::Exception, InvalidErrnoValue)
 
 std::string GetErrnoString(int error = errno);
-} // namespace DPL
+} // namespace SecurityServer
 
-#endif // DPL_ERRNO_STRING_H
+#endif // SECURITY_SERVER_ERRNO_STRING_H

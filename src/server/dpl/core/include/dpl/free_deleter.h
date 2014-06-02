@@ -23,11 +23,11 @@
 #define FREE_DELETER_H
 
 #include <cstdlib>
-namespace DPL
+namespace SecurityServer
 {
 struct free_deleter
 {
     void operator()(void *p) { std::free(p); }
 };
-}// DPL
+}// SecurityServer
 #endif // FREE_DELETER_H
