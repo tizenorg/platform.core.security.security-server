@@ -19,8 +19,8 @@
  * @version     1.0
  * @brief       This file is the implementation file of SQL connection
  */
-#ifndef DPL_SQL_CONNECTION_H
-#define DPL_SQL_CONNECTION_H
+#ifndef SECURITY_SERVER_SQL_CONNECTION_H
+#define SECURITY_SERVER_SQL_CONNECTION_H
 
 #include <dpl/noncopyable.h>
 #include <dpl/exception.h>
@@ -35,7 +35,7 @@
 #include <memory>
 #include <stdint.h>
 
-namespace DPL {
+namespace SecurityServer {
 namespace DB {
 /**
  * SQL connection class
@@ -49,7 +49,7 @@ class SqlConnection
     class Exception
     {
       public:
-        DECLARE_EXCEPTION_TYPE(DPL::Exception, Base)
+        DECLARE_EXCEPTION_TYPE(SecurityServer::Exception, Base)
         DECLARE_EXCEPTION_TYPE(Base, SyntaxError)
         DECLARE_EXCEPTION_TYPE(Base, ConnectionBroken)
         DECLARE_EXCEPTION_TYPE(Base, InternalError)
@@ -462,7 +462,7 @@ class SqlConnection
      * @param format
      * @param ...
      */
-    void ExecCommand(const char *format, ...) DPL_DEPRECATED_WITH_MESSAGE(
+    void ExecCommand(const char *format, ...) SECURITY_SERVER_DEPRECATED_WITH_MESSAGE(
             "To prevent sql injection do not use this \
              method for direct sql execution");
 
@@ -508,6 +508,6 @@ class SqlConnection
     RowID GetLastInsertRowID() const;
 };
 } // namespace DB
-} // namespace DPL
+} // namespace SecurityServer
 
-#endif // DPL_SQL_CONNECTION_H
+#endif // SECURITY_SERVER_SQL_CONNECTION_H
