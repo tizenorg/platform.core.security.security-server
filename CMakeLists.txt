@@ -62,6 +62,7 @@ SET(TARGET_SECURITY_SERVER "security-server")
 SET(TARGET_SECURITY_CLIENT "security-server-client")
 SET(TARGET_SECURITY_MANAGER_CLIENT "security-manager-client")
 SET(TARGET_SERVER_COMMON "security-server-commons")
+SET(TARGET_PRIVILEGE_DB_TESTS "privilege-db-tests")
 
 ADD_SUBDIRECTORY(src)
 ADD_SUBDIRECTORY(build)
