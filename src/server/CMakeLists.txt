@@ -32,6 +32,7 @@ SET(COMMON_SOURCES
     ${COMMON_PATH}/dpl/core/src/errno_string.cpp
     ${COMMON_PATH}/dpl/db/src/sql_connection.cpp
     ${COMMON_PATH}/dpl/db/src/naive_synchronization_object.cpp
+    ${COMMON_PATH}/db/privilege_db.cpp
     )
 
 INCLUDE_DIRECTORIES(SYSTEM
@@ -44,6 +45,7 @@ INCLUDE_DIRECTORIES(
     ${COMMON_PATH}/dpl/core/include
     ${COMMON_PATH}/dpl/log/include
     ${COMMON_PATH}/dpl/db/include
+    ${COMMON_PATH}/db
     )
 
 ADD_LIBRARY(${TARGET_SERVER_COMMON} SHARED ${COMMON_SOURCES})
@@ -59,6 +61,8 @@ SET_TARGET_PROPERTIES(
 TARGET_LINK_LIBRARIES(${TARGET_SERVER_COMMON}
     ${COMMON_DEP_LIBRARIES}
     )
+    
+SET(COMMON_PATH ${PROJECT_SOURCE_DIR}/src/server)
 
 ################################################################################
 
