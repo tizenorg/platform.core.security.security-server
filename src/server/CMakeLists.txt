@@ -64,7 +64,32 @@ TARGET_LINK_LIBRARIES(${TARGET_SERVER_COMMON}
     
 SET(COMMON_PATH ${PROJECT_SOURCE_DIR}/src/server)
 
+SET(PRIVILEGE_DB_TESTS_SOURCES
+    ${COMMON_PATH}/dpl/log/src/abstract_log_provider.cpp
+    ${COMMON_PATH}/dpl/log/src/dlog_log_provider.cpp
+    ${COMMON_PATH}/dpl/log/src/log.cpp
+    ${COMMON_PATH}/dpl/log/src/old_style_log_provider.cpp
+    ${COMMON_PATH}/dpl/core/src/assert.cpp
+    ${COMMON_PATH}/dpl/core/src/binary_queue.cpp
+    ${COMMON_PATH}/dpl/core/src/colors.cpp
+    ${COMMON_PATH}/dpl/core/src/exception.cpp
+    ${COMMON_PATH}/dpl/core/src/noncopyable.cpp
+    ${COMMON_PATH}/dpl/core/src/serialization.cpp
+    ${COMMON_PATH}/dpl/core/src/singleton.cpp
+    ${COMMON_PATH}/dpl/core/src/string.cpp
+    ${COMMON_PATH}/dpl/core/src/errno_string.cpp
+    ${COMMON_PATH}/dpl/db/src/sql_connection.cpp
+    ${COMMON_PATH}/dpl/db/src/naive_synchronization_object.cpp
+    ${COMMON_PATH}/db/privilege_db.cpp
+    ${COMMON_PATH}/db/privilege_db_test.cpp
+    )
+
+ADD_EXECUTABLE (${TARGET_PRIVILEGE_DB_TESTS} ${PRIVILEGE_DB_TESTS_SOURCES})
+TARGET_LINK_LIBRARIES(${TARGET_PRIVILEGE_DB_TESTS}
+    ${COMMON_DEP_LIBRARIES}
+    )
+
 ################################################################################
 
 INSTALL(TARGETS ${TARGET_SERVER_COMMON} DESTINATION ${LIB_INSTALL_DIR})
-
+INSTALL(TARGETS ${TARGET_PRIVILEGE_DB_TESTS} DESTINATION bin)
