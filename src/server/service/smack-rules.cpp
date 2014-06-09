@@ -226,7 +226,7 @@ bool SmackRules::installPackageRules(const std::string &pkgId) {
              return false;
          }
 
-         if (!smackRules.apply()) {
+         if (smack_smackfs_path() != NULL && !smackRules.apply()) {
              LogError("Failed to apply application rules to kernel");
              return false;
          }
