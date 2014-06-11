@@ -17,4 +17,3 @@
 #
 
 ADD_SUBDIRECTORY(security-server)
-ADD_SUBDIRECTORY(security-manager)
