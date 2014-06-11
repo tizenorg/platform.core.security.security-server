@@ -1,7 +1,7 @@
 /*
  *  Copyright (c) 2000 - 2013 Samsung Electronics Co., Ltd All Rights Reserved
  *
- *  Contact: Bartlomiej Grzelewski <b.grzelewski@samsung.com>
+ *  Contact: Bumjin Im <bj.im@samsung.com>
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -50,9 +50,6 @@ char const * const SERVICE_SOCKET_PASSWD_SET =
         SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-password-set.socket";
 char const * const SERVICE_SOCKET_PASSWD_RESET =
         SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-password-reset.socket";
-
-char const * const SERVICE_SOCKET_INSTALLER =
-        SOCKET_PATH_PREFIX_SECURITY_MANAGER"/tmp/.security-manager-installer.socket";
 
 const size_t COOKIE_SIZE = 20;
 
