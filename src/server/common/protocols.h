@@ -100,3 +100,4 @@ extern const int SECURITY_SERVER_MAX_OBJ_NAME;
 } // namespace SecuritySever
 
 #endif // _SECURITY_SERVER_PROTOCOLS_
+
