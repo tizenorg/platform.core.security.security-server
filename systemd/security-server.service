@@ -14,8 +14,5 @@ Sockets=security-server-password-check.socket
 Sockets=security-server-password-set.socket
 Sockets=security-server-password-reset.socket
 
-#TODO: move bellow to separate systemd service
-Sockets=security-manager-installer.socket
-
 [Install]
 WantedBy=multi-user.target

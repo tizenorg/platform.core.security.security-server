@@ -37,7 +37,6 @@
 #include <app-permissions.h>
 #include <cookie.h>
 #include <password.h>
-#include <installer.h>
 
 IMPLEMENT_SAFE_SINGLETON(SecurityServer::Log::LogSystem);
 
@@ -100,10 +99,10 @@ int main(void) {
         REGISTER_SOCKET_SERVICE(manager, SecurityServer::PrivilegeByPidService);
         REGISTER_SOCKET_SERVICE(manager, SecurityServer::AppPermissionsService);
         REGISTER_SOCKET_SERVICE(manager, SecurityServer::PasswordService);
-        REGISTER_SOCKET_SERVICE(manager, SecurityServer::InstallerService);
 
         manager.MainLoop();
     }
     UNHANDLED_EXCEPTION_HANDLER_END
     return 0;
 }
+
