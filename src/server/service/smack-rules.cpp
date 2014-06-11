@@ -74,7 +74,7 @@ bool SmackRules::loadFromFile(const std::string &path)
     int fd;
     bool ret = true;
 
-    fd = open(path.c_str(), O_RDONLY);
+    fd = TEMP_FAILURE_RETRY(open(path.c_str(), O_RDONLY));
     if (fd == -1) {
         LogError("Failed to open file: %s" << path);
         return false;
@@ -85,7 +85,7 @@ bool SmackRules::loadFromFile(const std::string &path)
         ret = false;
     }
 
-    close(fd);
+    TEMP_FAILURE_RETRY(close(fd));
     return ret;
 }
 
@@ -94,7 +94,7 @@ bool SmackRules::saveToFile(const std::string &path) const
     int fd;
     bool ret = true;
 
-    fd = open(path.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644);
+    fd = TEMP_FAILURE_RETRY(open(path.c_str(), O_CREAT | O_WRONLY | O_TRUNC, 0644));
     if (fd == -1) {
         LogError("Failed to create file: %s" << path);
         return false;
@@ -106,7 +106,7 @@ bool SmackRules::saveToFile(const std::string &path) const
         ret = false;
     }
 
-    close(fd);
+    TEMP_FAILURE_RETRY(close(fd));
     return ret;
 }
 
