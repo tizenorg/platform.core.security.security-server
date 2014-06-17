@@ -1,0 +1,9 @@
+Code-Review+2: Rafal Krypa <r.krypa@samsung.com>
+Code-Review+1: Jacek Bukarewicz <j.bukarewicz@samsung.com>
+Verified+1: Jan Cybulski <j.cybulski@samsung.com>
+Verified+1: Marcin Lis <m.lis@samsung.com>
+Submitted-by: Casey Schaufler <casey.schaufler@intel.com>
+Submitted-at: Tue, 17 Jun 2014 11:00:39 -0700
+Reviewed-on: https://review.tizen.org/gerrit/22760
+Project: platform/core/security/security-server
+Branch: refs/heads/tizen
