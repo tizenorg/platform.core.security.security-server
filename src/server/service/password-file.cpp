@@ -45,10 +45,11 @@
 #include <password-file-buffer.h>
 
 namespace {
-    const std::string DATA_DIR = "/opt/data/security-server";
-    const std::string PASSWORD_FILE = DATA_DIR + "/password";
-    const std::string OLD_VERSION_PASSWORD_FILE = DATA_DIR + "/password.pwd";
-    const std::string ATTEMPT_FILE = DATA_DIR + "/attempt";
+    const std::string DATA_DIR = "/opt/data";
+    const std::string SS_DIR = DATA_DIR + "/security-server";
+    const std::string PASSWORD_FILE = SS_DIR + "/password";
+    const std::string OLD_VERSION_PASSWORD_FILE = SS_DIR + "/password.pwd";
+    const std::string ATTEMPT_FILE = SS_DIR + "/attempt";
     const double RETRY_TIMEOUT = 0.5;
     const mode_t FILE_MODE = S_IRUSR | S_IWUSR;
     const unsigned int CURRENT_FILE_VERSION = 3;
@@ -144,7 +145,16 @@ namespace SecurityServer
         // if not create it
         if (!dirExists(DATA_DIR.c_str())) {
             if(mkdir(DATA_DIR.c_str(), 0700)) {
-                LogError("Failed to create directory for files. Error: " << strerror(errno));
+                LogError("Failed to create " << DATA_DIR << " for files. Error: " << strerror(errno));
+                Throw(PasswordException::MakeDirError);
+            }
+        }
+
+        // check if security-server directory exist
+        // if not create it
+        if (!dirExists(SS_DIR.c_str())) {
+            if(mkdir(SS_DIR.c_str(), 0700)) {
+                LogError("Failed to create " << SS_DIR << " for files. Error: " << strerror(errno));
                 Throw(PasswordException::MakeDirError);
             }
         }
