@@ -1,6 +1,6 @@
 Name:       security-server
 Summary:    Security server and utilities
-Version:    0.0.120
+Version:    0.1.1
 Release:    1
 Group:      Security/Service
 License:    Apache-2.0
