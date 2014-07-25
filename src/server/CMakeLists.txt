@@ -38,7 +38,8 @@ ADD_LIBRARY(${TARGET_SERVER_COMMON} SHARED ${COMMON_SOURCES})
 SET_TARGET_PROPERTIES(
     ${TARGET_SERVER_COMMON}
     PROPERTIES
-        COMPILE_FLAGS "-D_GNU_SOURCE -fPIC -fvisibility=default"
+        COMPILE_FLAGS "-D_GNU_SOURCE -fPIC -fvisibility=default -pthread"
+        LINK_FLAGS "-pthread"
         SOVERSION 1.0.0
         VERSION 1.0.0
     )
