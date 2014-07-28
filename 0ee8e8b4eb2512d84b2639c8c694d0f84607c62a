@@ -1,0 +1,8 @@
+Code-Review+2: Casey Schaufler <casey.schaufler@intel.com>
+Verified+1: Adam Malinowski <a.malinowsk2@partner.samsung.com>
+Code-Review+1: Build Bot <b.bot@partner.samsung.com>
+Submitted-by: Marcin Niesluchowski <m.niesluchow@samsung.com>
+Submitted-at: Mon, 28 Jul 2014 01:24:53 -0700
+Reviewed-on: https://review.tizen.org/gerrit/24864
+Project: platform/core/security/security-server
+Branch: refs/heads/tizen
