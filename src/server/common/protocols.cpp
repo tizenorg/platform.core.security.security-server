@@ -30,7 +30,6 @@ namespace SecurityServer {
 
 #define SOCKET_PATH_PREFIX "/run/"
 #define SOCKET_PATH_PREFIX_SECURITY_SERVER SOCKET_PATH_PREFIX "security-server/"
-#define SOCKET_PATH_PREFIX_SECURITY_MANAGER SOCKET_PATH_PREFIX "security-manager/"
 
 char const * const SERVICE_SOCKET_SHARED_MEMORY =
         SOCKET_PATH_PREFIX_SECURITY_SERVER "security-server-api-data-share.socket";
