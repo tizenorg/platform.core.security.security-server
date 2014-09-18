@@ -11,6 +11,6 @@ INSTALL(FILES
     ${CMAKE_SOURCE_DIR}/systemd/security-server-password-check.socket
     ${CMAKE_SOURCE_DIR}/systemd/security-server-password-set.socket
     DESTINATION
-    /usr/lib/systemd/system
+    ${SYSTEMD_DIR}
 )
 
