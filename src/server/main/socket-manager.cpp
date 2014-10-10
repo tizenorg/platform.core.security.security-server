@@ -93,7 +93,8 @@ struct SignalService : public GenericSocketService {
             return;
         }
 
-        signalfd_siginfo *siginfo = (signalfd_siginfo*)(&(event.rawBuffer[0]));
+        const signalfd_siginfo *siginfo = reinterpret_cast<const signalfd_siginfo*>(
+            reinterpret_cast<const void*>(event.rawBuffer.data()));
 
         if (siginfo->ssi_signo == SIGTERM) {
             LogInfo("Got signal: SIGTERM");

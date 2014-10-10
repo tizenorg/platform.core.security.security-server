@@ -87,8 +87,8 @@ namespace SecurityServer
             SHA256Password(const std::string &password)
                 : m_hash(hash(password)) {}
 
-            SHA256Password(const RawHash& hash)
-                : m_hash(hash) {}
+            SHA256Password(const RawHash& phash)
+                : m_hash(phash) {}
 
             void Serialize(IStream &stream) const
             {
