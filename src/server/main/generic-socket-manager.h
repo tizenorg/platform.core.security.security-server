@@ -56,14 +56,14 @@ struct GenericSocketService {
     typedef std::string SmackLabel;
     typedef std::string ServiceHandlerPath;
     struct ServiceDescription {
-        ServiceDescription(const char *path,
-            const char *smackLabel,
-            InterfaceID interfaceID = 0,
-            bool useSendMsg = false)
-          : smackLabel(smackLabel)
-          , interfaceID(interfaceID)
-          , serviceHandlerPath(path)
-          , useSendMsg(useSendMsg)
+        ServiceDescription(const char *paramPath,
+            const char *paramSmackLabel,
+            InterfaceID paramInterfaceID = 0,
+            bool paramUseSendMsg = false)
+          : smackLabel(paramSmackLabel)
+          , interfaceID(paramInterfaceID)
+          , serviceHandlerPath(paramPath)
+          , useSendMsg(paramUseSendMsg)
         {}
 
         SmackLabel smackLabel;                 // Smack label for socket

@@ -75,10 +75,10 @@ SendMsgData::SendMsgData()
   , m_pimpl(NULL)
 {}
 
-SendMsgData::SendMsgData(int resultCode, int fileDesc, int flags)
+SendMsgData::SendMsgData(int resultCode, int fileDesc, int paramFlags)
   : m_resultCode(resultCode)
   , m_fileDesc(fileDesc)
-  , m_flags(flags)
+  , m_flags(paramFlags)
   , m_pimpl(NULL)
 {}
 
