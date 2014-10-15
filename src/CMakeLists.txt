@@ -107,7 +107,7 @@ INSTALL(TARGETS ${TARGET_SECURITY_SERVER} DESTINATION bin)
 
 INSTALL(FILES
     ${SECURITY_SERVER_PATH}/include/security-server.h
-    DESTINATION /usr/include/security-server
+    DESTINATION ${INCLUDE_INSTALL_DIR}/security-server
     )
 
 ################################################################################
